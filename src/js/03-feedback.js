@@ -1,45 +1,37 @@
-import throttled from 'lodash.throttle';
+import throttle from 'lodash.throttle';
 
 const FEEDBACK_FORM_STATE = 'feedback-form-state';
-const formInputRef = document.querySelector('.feedback-form');
-const throttledChange = throttled(onImputChange, 500);
 
-formInputRef.addEventListener('input', throttledChange);
-formInputRef.addEventListener(`submit`, onSubmit);
+const form = document.querySelector('.feedback-form');
 
-populateData();
+form.addEventListener('input', throttle(onInputData, 500));
+form.addEventListener('submit', onFormSubmit);
 
-const formData = {
-  email: '',
-  message: '',
-};
+let dataForm = JSON.parse(localStorage.getItem(FEEDBACK_FORM_STATE)) || {};
+const { email, message } = form.elements;
+reloadPage();
 
-function onImputChange(evt) {
-  if (evt.target.nodeName == 'INPUT') {
-    formData.email = evt.target.value;
-  } else if (evt.target.nodeName == 'TEXTAREA') {
-    formData.message = evt.target.value;
-  }
-
-  localStorage.setItem(FEEDBACK_FORM_STATE, JSON.stringify(formData));
+function onInputData(event) {
+  dataForm = { email: email.value, message: message.value };
+  localStorage.setItem(FEEDBACK_FORM_STATE, JSON.stringify(dataForm));
 }
 
-function onSubmit(evt) {
-  evt.preventDefault();
-  console.log(JSON.parse(localStorage.getItem(FEEDBACK_FORM_STATE)));
-  evt.currentTarget.reset();
+function reloadPage() {
+  if (dataForm) {
+    email.value = dataForm.email || '';
+    message.value = dataForm.message || '';
+  }
+}
+
+function onFormSubmit(event) {
+  event.preventDefault();
+  console.log({ email: email.value, message: message.value });
+
+  if (email.value === '' || message.value === '') {
+    return alert(`Будь ласка, заповніть всі обов'язкові поля.`);
+  }
+
   localStorage.removeItem(FEEDBACK_FORM_STATE);
-}
-
-function populateData() {
-  const savedData = localStorage.getItem(FEEDBACK_FORM_STATE);
-  const parsedSavedData = JSON.parse(savedData);
-  console.log(parsedSavedData);
-  console.log(savedData);
-  if (savedData) {
-    console.log(parsedSavedData.email);
-    console.log(parsedSavedData.message);
-    formInputRef.email.value = parsedSavedData.email;
-    formInputRef.message.value = parsedSavedData.message;
-  }
+  event.currentTarget.reset();
+  dataForm = {};
 }
